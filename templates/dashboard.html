@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>APP</h1>
+            <p class="user-name">Bienvenido {{ user_name }}</p>
+        </div>
+        <div class="card-list">
+            <div class="card">
+                <div class="icon-container">
+                    <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
+                </div>
+                <p>Tarjeta Santander</p>
+                <button class="menu-button">...</button>
+                <div class="menu-options">
+                    <a href="#" class="delete-option" data-card-id="1">Eliminar</a>
+                </div>
+            </div>
+            <div class="card">
+                <div class="icon-container">
+                    <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
+                </div>
+                <p>Tarjeta BBVA</p>
+                <button class="menu-button">...</button>
+                <div class="menu-options">
+                    <a href="#" class="delete-option" data-card-id="2">Eliminar</a>
+                </div>
+            </div>
+            <div class="card">
+                <div class="icon-container">
+                    <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
+                </div>
+                <p>Tarjeta FONDEA</p>
+                <button class="menu-button">...</button>
+                <div class="menu-options">
+                    <a href="#" class="delete-option" data-card-id="3">Eliminar</a>
+                </div>
+            </div>
+        </div>
+        <button class="add-card">+ Agregar Tarjeta</button>
+    </div>
+
+    <script>
+        // Mostrar el menú de los tres puntos
+        document.querySelectorAll('.menu-button').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const card = this.closest('.card');
+                const menu = card.querySelector('.menu-options');
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        // Cerrar el menú al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.card')) {
+                document.querySelectorAll('.menu-options').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+
+        // Manejar el clic en el botón de eliminar
+        document.querySelectorAll('.delete-option').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                const cardId = this.getAttribute('data-card-id');
+                fetch(`/delete_card/${cardId}`, {
+                    method: 'POST',
+                }).then(response => {
+                    if (response.ok) {
+                        // Eliminar la tarjeta visualmente del DOM
+                        const card = this.closest('.card');
+                        card.remove();
+                    } else {
+                        alert('Hubo un problema al eliminar la tarjeta.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

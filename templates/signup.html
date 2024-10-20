@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear cuenta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Crea una cuenta</h1>
+        <form method="POST">
+            <input type="text" name="first_name" placeholder="Nombre" required><br>
+            <input type="text" name="last_name" placeholder="Apellidos" required><br>
+            <label for="birthdate">Fecha de nacimiento:</label><br>
+            <input type="date" id="birthdate" name="birthdate" required><br>
+            <input type="email" name="email" placeholder="Correo" required><br>
+            <input type="password" name="password" placeholder="Contraseña" required><br>
+            <label>
+                <input type="checkbox" name="terms" required> Acepto los <a href="#">términos de privacidad</a>
+            </label><br><br>
+            <input type="submit" value="Crear cuenta">
+        </form>
+        <p>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a></p>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
