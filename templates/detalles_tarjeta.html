@@ -97,11 +97,17 @@
             const blockTitles = ['Educación', 'Salud', 'Transporte', 'Ocio', 'Comida', 'Tecnología', 'Viajes', 'Ropa', 'Hogar', 'Deporte'];
             const numBlocks = getRandomInt(2, 20); // Genera entre 2 y 20 bloques
 
+            let totalGastado = 0;
+            let gastosPorCategoria = [];
+
             for (let i = 0; i < numBlocks; i++) {
                 const title = blockTitles[Math.floor(Math.random() * blockTitles.length)];
                 const presupuesto = getRandomInt(1000, 10000); // Presupuesto aleatorio entre 1000 y 10000
                 const gastado = getRandomInt(0, presupuesto); // Gastado aleatorio, no puede ser mayor que el presupuesto
-                const restante = presupuesto - gastado;
+
+                // Acumular los gastos por categoría
+                gastosPorCategoria.push({ title, gastado });
+                totalGastado += gastado;
 
                 const block = document.createElement('div');
                 block.classList.add('block');
@@ -109,37 +115,53 @@
                     <h3>${title}</h3>
                     <p>Presupuesto: <span class="amount">$${presupuesto}</span></p>
                     <p>Gastado: <span class="amount">$${gastado}</span></p>
-                    <p>Restante: <span class="amount">$${restante}</span></p>
                 `;
 
                 blockList.appendChild(block);
             }
+
+            // Actualizar la gráfica de pastel con los gastos por categoría
+            updatePieChart(gastosPorCategoria, totalGastado);
+        }
+
+        // Función para actualizar la gráfica de pastel
+        function updatePieChart(gastosPorCategoria, totalGastado) {
+            const ctx = document.getElementById('myPieChart').getContext('2d');
+
+            // Extraer los títulos de las categorías y los gastos
+            const labels = gastosPorCategoria.map(item => item.title);
+            const gastos = gastosPorCategoria.map(item => item.gastado);
+
+            // Calcular porcentajes para mostrar en la gráfica
+            const porcentajes = gastos.map(gasto => ((gasto / totalGastado) * 100).toFixed(2));
+
+            const myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels.map((label, index) => `${label} (${porcentajes[index]}%)`), // Mostrar el porcentaje en cada categoría
+                    datasets: [{
+                        data: gastos,
+                        backgroundColor: [
+                            '#0984e3', '#74b9ff', '#55efc4', '#fdcb6e', '#e17055',
+                            '#d63031', '#e84393', '#00cec9', '#2d3436', '#6c5ce7'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
         }
 
         // Llamar a la función para generar los bloques al cargar la página
         generateBlocks();
-
-        // Crear una gráfica de pastel de ejemplo al 100%
-        const ctx = document.getElementById('myPieChart').getContext('2d');
-        const myPieChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Presupuesto usado', 'Presupuesto restante'],
-                datasets: [{
-                    data: [3200, 1800], // Datos de ejemplo
-                    backgroundColor: ['#0984e3', '#74b9ff']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
     </script>
 </body>
 </html>
+

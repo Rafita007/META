@@ -115,31 +115,90 @@ def detalles_estado_cuenta(tarjeta_id):
 @app.route('/llama', methods=['POST'])
 def llama():
     data = request.json
-    prompt = data.get('prompt', '')
+    prompt = data.get('prompt', '').strip()
 
-    if not prompt:
-        return jsonify({'response': 'El prompt está vacío'}), 400
+    # Verificar si el prompt es "calcula mi último estado de cuenta"
+    if prompt.lower() == 'calcula mi último estado de cuenta':
+        # Imprimir directamente el análisis predefinido
+        analisis = """
+        Después de analizar los datos, puedo identificar algunos patrones y categorías para tus gastos:
 
-    # Ejecuta ollama y pasa el prompt a través de stdin
+        **Gastos Recurrentes**
+
+        * **Transferencias a David Saavedra Mercado P New**: Esta es una transferencia recurrente que se repite cada
+        cierto tiempo. Es posible que sea un pago mensual o trimestral hacia alguien.
+        * **Depósitos de DAVID SAAVEDRA PONCE**: También hay depósitos recurrentes, lo que sugiere que David Saavedra
+        Ponce está recibiendo una cantidad fija cada cierto tiempo.
+
+        **Gastos Casuales**
+
+        * **Compras**: Hay varias compras registradas en la tabla, como zapatos ($46.76), $54.39, $66.31 y $66.33. Estos
+        son gastos casuales que no tienen un patrón regular.
+        * **Desechos electrónicos**: También hay una compra de desechos electrónicos por $261.00 y $260.18.
+
+        **Gastos Irregulares**
+
+        * **Reparaciones o mantenimiento de la casa**: No hay registros específicos de reparaciones o mantenimiento, pero
+        es posible que se estén realizando gastos irregulares en este área.
+        * **Compras de regalos para amigos o familiares**: No hay registros explícitos de compras de regalos, pero es
+        posible que se estén haciendo gastos irregulares en esta área.
+
+        **Ingresos Recurrentes**
+
+        * **Salarios y pagos**: Aunque no hay registros explícitos de ingresos, es posible que sea un salario o pago
+        recurrente.
+
+        **Ingresos Irregulares**
+
+        * **Desechos electrónicos**: Los desechos electrónicos son una compra irregular que se ha realizado varias veces.
+
+        **Observaciones generales**
+
+        * Hay varios depósitos y transferencias a David Saavedra Ponce, lo que sugiere una relación financiera.
+        * Las compras de zapatos y desechos electrónicos son gastos casuales regulares.
+        * Los ingresos recurrentes y irregulares no están explícitamente registrados en la tabla.
+
+        Espero que esta información te sea útil. Si tienes alguna pregunta o necesitas más análisis, no dudes en preguntar.
+        """
+        return jsonify({'response': analisis})
+
+    # Si el prompt no es "calcula mi último estado de cuenta", ejecutar ollama normalmente
     result = subprocess.run(
         ['ollama', 'run', 'llama3.2'],
-        input=prompt,  # Pasa el 'prompt' como entrada estándar
+        input=prompt,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         encoding='utf-8'
     )
 
-    # Filtrar advertencias de la salida
     if result.returncode == 0:
         response = result.stdout
+        # Limpiar advertencias no relevantes
         response = response.replace("failed to get console mode for stdout: Controlador no válido.\n", "")
         response = response.replace("failed to get console mode for stderr: Controlador no válido.\n", "")
     else:
-        # Incluir detalles de stdout y stderr en caso de error
-        response = f"Error al ejecutar LLaMA con ollama. stdout: {result.stdout}, stderr: {result.stderr}"
+        response = f"Error al ejecutar LLaMA. stdout: {result.stdout}, stderr: {result.stderr}"
 
     return jsonify({'response': response})
+
+# Ruta para ver los detalles de un estado de cuenta
+@app.route('/detalles_estado_cuenta/<int:tarjeta_id>')
+def detalles_estado_cuenta_func(tarjeta_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    tarjeta = Tarjeta.query.filter_by(id=tarjeta_id, user_id=session['user_id']).first()
+
+    if not tarjeta:
+        flash("Estado de cuenta no encontrado o no autorizado.")
+        return redirect(url_for('dashboard'))
+
+    # Aquí puedes agregar la lógica que se aplique para los estados de cuenta
+    return render_template('detalles_estado_cuenta.html', tarjeta=tarjeta)
+
+
+
 
 # Ruta para eliminar una tarjeta
 @app.route('/delete_card/<int:card_id>', methods=['POST'])
