@@ -58,28 +58,16 @@ def dashboard():
     # Obtener las tarjetas asociadas a este usuario
     tarjetas = Tarjeta.query.filter_by(user_id=user.id).all()
 
-    # Si el usuario no tiene tarjetas, agregar las tarjetas por defecto
-    if not tarjetas:
-        tarjetas_por_defecto = [
-            Tarjeta(nombre="Tarjeta Santander", user_id=user.id),
-            Tarjeta(nombre="Tarjeta BBVA", user_id=user.id),
-            Tarjeta(nombre="Tarjeta FONDEA", user_id=user.id)
-        ]
-        db.session.bulk_save_objects(tarjetas_por_defecto)
-        db.session.commit()
-        tarjetas = Tarjeta.query.filter_by(user_id=user.id).all()  # Volver a cargar las tarjetas
-
-    # Depuración: Imprimir las tarjetas encontradas para el usuario
+    # No añadimos tarjetas por defecto, el usuario comienza sin tarjetas
     print(f"Tarjetas para el usuario {user.first_name} (ID: {user.id}):")
     for tarjeta in tarjetas:
-        print(f"- Tarjeta ID: {tarjeta.id}, Nombre: {tarjeta.nombre}")
+        print(f"- Tarjeta ID: {tarjeta.id}, Nombre: {tarjeta.nombre}, User ID: {tarjeta.user_id}")
 
     return render_template('dashboard.html', tarjetas=tarjetas, user_name=user.first_name)
 
 # Ruta para eliminar una tarjeta
 @app.route('/delete_card/<int:card_id>', methods=['POST'])
 def delete_card(card_id):
-    # Mostrar el card_id que estamos intentando eliminar
     print(f"Intentando eliminar tarjeta con ID: {card_id}")
 
     # Obtener el user_id de la sesión
@@ -167,17 +155,71 @@ def logout():
 
 
 # Ruta para agregar una tarjeta
-@app.route('/add_card', methods=['POST'])
-def add_card():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+@app.route('/add_tarjeta', methods=['GET', 'POST'])
+def add_tarjeta():
+    if request.method == 'POST':
+        numero_tarjeta = request.form['numero_tarjeta']
+        clabe = request.form['clabe']
+        banco = request.form['banco']
+        user_id = session['user_id']
 
-    nombre_tarjeta = request.form['nombre_tarjeta']
-    nueva_tarjeta = Tarjeta(nombre=nombre_tarjeta, user_id=session['user_id'])
-    db.session.add(nueva_tarjeta)
-    db.session.commit()
+        # Crear una nueva tarjeta
+        nueva_tarjeta = Tarjeta(nombre=f"Tarjeta {banco}", user_id=user_id)
+        db.session.add(nueva_tarjeta)
+        db.session.commit()
 
-    return redirect(url_for('dashboard'))
+        flash(f"Tarjeta {banco} agregada correctamente.")
+        return redirect(url_for('dashboard'))
+
+    return '''
+    <form method="POST">
+        <label for="numero_tarjeta">Número de tarjeta:</label>
+        <input type="text" id="numero_tarjeta" name="numero_tarjeta" required><br>
+        <label for="clabe">CLABE:</label>
+        <input type="text" id="clabe" name="clabe" required><br>
+        <label for="banco">Banco:</label>
+        <select id="banco" name="banco" required>
+            <option value="Santander">Santander</option>
+            <option value="BBVA">BBVA</option>
+            <option value="Fondeadora">Fondeadora</option>
+        </select><br>
+        <button type="submit">Agregar Tarjeta</button>
+    </form>
+    '''
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+@app.route('/add_estado_cuenta', methods=['GET', 'POST'])
+def add_estado_cuenta():
+    if request.method == 'POST':
+        pdf_file = request.files['pdf_file']
+
+        if pdf_file and pdf_file.filename.endswith('.pdf'):
+            # Guardar el archivo en la carpeta 'uploads'
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_file.filename)
+            pdf_file.save(file_path)
+
+            # Crear un nuevo registro de estado de cuenta en la base de datos
+            nueva_tarjeta = Tarjeta(nombre="Estado de Cuenta", user_id=session['user_id'])
+            db.session.add(nueva_tarjeta)
+            db.session.commit()
+
+            flash("Estado de cuenta agregado correctamente.")
+        else:
+            flash("Por favor, sube un archivo PDF válido.")
+
+        return redirect(url_for('dashboard'))
+
+    return '''
+    <form method="POST" enctype="multipart/form-data">
+        <label for="pdf_file">Sube tu estado de cuenta (PDF):</label>
+        <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required><br>
+        <button type="submit">Subir</button>
+    </form>
+    '''
 
 
 # Ruta principal (redirigir a login o dashboard según la sesión)

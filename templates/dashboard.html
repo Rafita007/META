@@ -5,6 +5,370 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <style>
+        /* Estilos básicos para el cuerpo */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+            color: #2d3436;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            width: 80%;
+            max-width: 1200px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Ajustar el diseño de las tarjetas */
+        .card-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: flex-start;
+        }
+
+        .card {
+            background-color: #f1f3f6;
+            border-radius: 12px;
+            padding: 20px;
+            width: 250px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Ajuste de los tres puntos */
+        .menu-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Menú de opciones que aparece al hacer clic en los tres puntos */
+        .menu-options {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            right: 20px;
+            top: 50px;
+        }
+
+        .menu-options a {
+            color: #d63031;
+            text-decoration: none;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .menu-options a:hover {
+            color: #e74c3c;
+        }
+
+        /* Mostrar el menú al hacer clic en los puntos */
+        .card.active .menu-options {
+            display: block;
+        }
+
+        /* Botón de agregar tarjeta ajustado */
+        .add-card {
+            margin-top: 20px;
+            background-color: #0984e3;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            align-self: center;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-card:hover {
+            background-color: #74b9ff;
+        }
+
+        /* Estilos para las ventanas emergentes */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .close {
+            color: red;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: darkred;
+        }
+
+        /* Estilos para el formulario dentro de la ventana emergente */
+        form label, form input, form select, form button {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        form input, form select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        form button {
+            background-color: #0984e3;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        form button:hover {
+            background-color: #74b9ff;
+        }
+
+        .file-upload-btn {
+            margin-top: 10px;
+            background-color: #0984e3;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .file-upload-btn:hover {
+            background-color: #74b9ff;
+        }
+
+        .file-input-container {
+            position: relative;
+            margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+         /* Botón de agregar tarjeta ajustado */
+        .add-card {
+            margin-top: 20px;
+            background-color: #0984e3;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            align-self: center;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-card:hover {
+            background-color: #74b9ff;
+        }
+
+        /* Estilos para las ventanas emergentes */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+         /* Estilos para las ventanas emergentes */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .close {
+            color: red;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: darkred;
+        }
+
+        /* Mejora de los botones para seleccionar entre tarjeta y estado de cuenta */
+        .modal-content button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #0984e3;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .modal-content button:hover {
+            background-color: #74b9ff;
+        }
+
+        /* Estilo del botón para seleccionar archivo */
+        .file-input-container {
+            position: relative;
+            margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .file-label {
+            background-color: #0984e3;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-label:hover {
+            background-color: #74b9ff;
+        }
+
+        /* Botón de subida de archivo */
+        .file-upload-btn {
+            margin-top: 10px;
+            background-color: #0984e3;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .file-upload-btn:hover {
+            background-color: #74b9ff;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -12,84 +376,162 @@
             <h1>APP</h1>
             <p class="user-name">Bienvenido {{ user_name }}</p>
         </div>
+
         <div class="card-list">
+            {% for tarjeta in tarjetas %}
             <div class="card">
                 <div class="icon-container">
                     <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
                 </div>
-                <p>Tarjeta Santander</p>
+                <p>{{ tarjeta.nombre }}</p>
                 <button class="menu-button">...</button>
                 <div class="menu-options">
-                    <a href="#" class="delete-option" data-card-id="1">Eliminar</a>
+                    <a href="#" class="delete-option" data-card-id="{{ tarjeta.id }}">Eliminar</a>
                 </div>
             </div>
-            <div class="card">
-                <div class="icon-container">
-                    <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
-                </div>
-                <p>Tarjeta BBVA</p>
-                <button class="menu-button">...</button>
-                <div class="menu-options">
-                    <a href="#" class="delete-option" data-card-id="2">Eliminar</a>
-                </div>
-            </div>
-            <div class="card">
-                <div class="icon-container">
-                    <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
-                </div>
-                <p>Tarjeta FONDEA</p>
-                <button class="menu-button">...</button>
-                <div class="menu-options">
-                    <a href="#" class="delete-option" data-card-id="3">Eliminar</a>
-                </div>
-            </div>
+            {% endfor %}
         </div>
-        <button class="add-card">+ Agregar Tarjeta</button>
+
+        <button class="add-card" id="openModalBtn">+ Agregar</button>
+    </div>
+
+    <!-- Ventana emergente inicial para seleccionar tarjeta o estado de cuenta -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModalBtn">&times;</span>
+            <h3>¿Qué deseas agregar?</h3>
+            <button id="addTarjetaBtn">Subir Tarjeta</button>
+            <button id="addEstadoBtn">Subir Estado de Cuenta</button>
+        </div>
+    </div>
+
+    <!-- Ventana emergente para agregar tarjeta -->
+    <div id="modalTarjeta" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeTarjetaBtn">&times;</span>
+            <h3>Agregar Tarjeta</h3>
+            <form method="POST" action="{{ url_for('add_tarjeta') }}">
+                <label for="numero_tarjeta">Número de tarjeta:</label>
+                <input type="text" id="numero_tarjeta" name="numero_tarjeta" required><br>
+                <label for="clabe">CLABE:</label>
+                <input type="text" id="clabe" name="clabe" required><br>
+                <label for="banco">Banco:</label>
+                <select id="banco" name="banco" required>
+                    <option value="Santander">Santander</option>
+                    <option value="BBVA">BBVA</option>
+                    <option value="Fondeadora">Fondeadora</option>
+                </select><br>
+                <button type="submit">Agregar Tarjeta</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ventana emergente para subir estado de cuenta -->
+    <div id="modalEstadoCuenta" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeEstadoCuentaBtn">&times;</span>
+            <h3>Subir Estado de Cuenta</h3>
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('add_estado_cuenta') }}">
+                <div class="file-input-container">
+                    <label for="pdf_file" class="file-label">Seleccionar archivo</label>
+                    <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+                </div>
+                <button type="submit" class="file-upload-btn">Subir Estado de Cuenta</button>
+            </form>
+        </div>
     </div>
 
     <script>
-        // Mostrar el menú de los tres puntos
-        document.querySelectorAll('.menu-button').forEach(button => {
-            button.addEventListener('click', function(event) {
+        const modal = document.getElementById("modal");
+        const modalTarjeta = document.getElementById("modalTarjeta");
+        const modalEstadoCuenta = document.getElementById("modalEstadoCuenta");
+
+        const openModalBtn = document.getElementById("openModalBtn");
+        const closeModalBtn = document.getElementById("closeModalBtn");
+        const closeTarjetaBtn = document.getElementById("closeTarjetaBtn");
+        const closeEstadoCuentaBtn = document.getElementById("closeEstadoCuentaBtn");
+
+        const addTarjetaBtn = document.getElementById("addTarjetaBtn");
+        const addEstadoBtn = document.getElementById("addEstadoBtn");
+
+        // Abrir la primera ventana emergente
+        openModalBtn.onclick = function() {
+            modal.style.display = "flex";
+        }
+
+        // Cerrar la primera ventana emergente
+        closeModalBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Abrir la ventana de agregar tarjeta
+        addTarjetaBtn.onclick = function() {
+            modal.style.display = "none";  // Cerrar la primera ventana
+            modalTarjeta.style.display = "flex";  // Abrir la segunda ventana
+        }
+
+        // Cerrar la ventana de agregar tarjeta
+        closeTarjetaBtn.onclick = function() {
+            modalTarjeta.style.display = "none";
+        }
+
+        // Abrir la ventana de subir estado de cuenta
+        addEstadoBtn.onclick = function() {
+            modal.style.display = "none";  // Cerrar la primera ventana
+            modalEstadoCuenta.style.display = "flex";  // Abrir la tercera ventana
+        }
+
+        // Cerrar la ventana de subir estado de cuenta
+        closeEstadoCuentaBtn.onclick = function() {
+            modalEstadoCuenta.style.display = "none";
+        }
+
+        // Cerrar cualquier ventana emergente al hacer clic fuera
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            } else if (event.target === modalTarjeta) {
+                modalTarjeta.style.display = "none";
+            } else if (event.target === modalEstadoCuenta) {
+                modalEstadoCuenta.style.display = "none";
+            }
+        }
+
+        // Funcionalidad de los tres puntos para mostrar el menú de opciones
+        const menuButtons = document.querySelectorAll('.menu-button');
+        menuButtons.forEach(button => {
+            button.addEventListener('click', function() {
                 const card = this.closest('.card');
-                const menu = card.querySelector('.menu-options');
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                card.classList.toggle('active');
             });
         });
 
-        // Cerrar el menú al hacer clic fuera
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.card')) {
-                document.querySelectorAll('.menu-options').forEach(menu => {
-                    menu.style.display = 'none';
-                });
+        // Ocultar el menú de opciones al hacer clic fuera de la tarjeta
+        window.onclick = function(event) {
+            if (!event.target.matches('.menu-button')) {
+                const menus = document.querySelectorAll('.card.active');
+                menus.forEach(menu => menu.classList.remove('active'));
             }
-        });
+        }
 
-        // Manejar el clic en el botón de eliminar
-        // Manejar el clic en el botón de eliminar
-        document.querySelectorAll('.delete-option').forEach(button => {
-            button.addEventListener('click', function(event) {
+        // Funcionalidad de eliminar tarjeta
+        const deleteOptions = document.querySelectorAll('.delete-option');
+        deleteOptions.forEach(option => {
+            option.addEventListener('click', function(event) {
                 event.preventDefault();
                 const cardId = this.getAttribute('data-card-id');
-
                 fetch(`/delete_card/${cardId}`, {
                     method: 'POST',
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.status === 'success') {
-                          const card = this.closest('.card');
-                          card.remove();
-                      } else {
-                          alert(data.message);
-                      }
-                  }).catch(error => {
-                      console.error('Error al procesar la solicitud:', error);
-                      alert('Hubo un problema al eliminar la tarjeta.');
-                  });
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();  // Recargar la página después de eliminar
+                    }
+                });
             });
         });
-
     </script>
 </body>
 </html>
