@@ -379,18 +379,20 @@
 
         <div class="card-list">
             {% for tarjeta in tarjetas %}
-            <div class="card">
+            <div class="card" onclick="window.location.href='/detalles_tarjeta/{{ tarjeta.id }}';">
                 <div class="icon-container">
                     <img src="{{ url_for('static', filename='tarjeta.png') }}" alt="Tarjeta">
                 </div>
                 <p>{{ tarjeta.nombre }}</p>
-                <button class="menu-button">...</button>
+                <!-- Asegúrate de que el botón no afecte la redirección -->
+                <button class="menu-button" onclick="event.stopPropagation();">...</button>
                 <div class="menu-options">
-                    <a href="#" class="delete-option" data-card-id="{{ tarjeta.id }}">Eliminar</a>
+                    <a href="#" class="delete-option" data-card-id="{{ tarjeta.id }}" onclick="event.stopPropagation();">Eliminar</a>
                 </div>
             </div>
             {% endfor %}
         </div>
+
 
         <button class="add-card" id="openModalBtn">+ Agregar</button>
     </div>

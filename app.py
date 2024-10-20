@@ -65,6 +65,27 @@ def dashboard():
 
     return render_template('dashboard.html', tarjetas=tarjetas, user_name=user.first_name)
 
+
+
+@app.route('/detalles_tarjeta/<int:tarjeta_id>')
+def detalles_tarjeta(tarjeta_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # Buscar la tarjeta por ID y asegurarse de que pertenece al usuario logueado
+    tarjeta = Tarjeta.query.filter_by(id=tarjeta_id, user_id=session['user_id']).first()
+
+    if not tarjeta:
+        flash("Tarjeta no encontrada o no autorizada.")
+        return redirect(url_for('dashboard'))
+
+    # Datos de ejemplo para el presupuesto y gastos
+    presupuesto = 5000
+    gastado = 3200
+    restante = presupuesto - gastado
+
+    return render_template('detalles_tarjeta.html', tarjeta=tarjeta, presupuesto=presupuesto, gastado=gastado, restante=restante)
+
 # Ruta para eliminar una tarjeta
 @app.route('/delete_card/<int:card_id>', methods=['POST'])
 def delete_card(card_id):
