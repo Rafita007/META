@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
@@ -368,9 +369,117 @@
         .file-upload-btn:hover {
             background-color: #74b9ff;
         }
+
+         .chatbot-circle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #0984e3;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000; /* Asegura que esté al frente */
+        }
+
+        .chatbot-box {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: none; /* Inicialmente oculto */
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .chatbot-box.active {
+            display: flex; /* Se muestra cuando se añade la clase 'active' */
+        }
+
+        .chatbot-header {
+            background-color: #0984e3;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .chatbot-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+
+        #userInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: none; /* Evita que el usuario cambie el tamaño del textarea */
+        }
+
+        #llamaForm button {
+            padding: 10px 15px;
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #llamaForm button:hover {
+            background-color: #074c92;
+        }
+
+
     </style>
 </head>
 <body>
+    <div class="chatbot-circle" id="chatbot-circle">
+        💬
+    </div>
+
+    <form id="llamaForm">
+        <div class="chatbot-box">
+            <div class="chatbot-header">
+                Chatbot
+            </div>
+            <div class="chatbot-body">
+                <p>Aquí puedes hablar con el chatbot.</p>
+            </div>
+            <div class="chatbot-input">
+                <textarea id="userInput" rows="4" cols="50" placeholder="Escribe tu mensaje..."></textarea>
+                <br>
+                <button type="submit">Enviar</button>
+            </div>
+        </div>
+    </form>
+
+
+
     <div class="container">
         <div class="header">
             <h1>APP</h1>
@@ -428,6 +537,8 @@
         </div>
     </div>
 
+
+
     <!-- Ventana emergente para subir estado de cuenta -->
     <div id="modalEstadoCuenta" class="modal">
         <div class="modal-content">
@@ -442,98 +553,6 @@
             </form>
         </div>
     </div>
-
-    <script>
-        const modal = document.getElementById("modal");
-        const modalTarjeta = document.getElementById("modalTarjeta");
-        const modalEstadoCuenta = document.getElementById("modalEstadoCuenta");
-
-        const openModalBtn = document.getElementById("openModalBtn");
-        const closeModalBtn = document.getElementById("closeModalBtn");
-        const closeTarjetaBtn = document.getElementById("closeTarjetaBtn");
-        const closeEstadoCuentaBtn = document.getElementById("closeEstadoCuentaBtn");
-
-        const addTarjetaBtn = document.getElementById("addTarjetaBtn");
-        const addEstadoBtn = document.getElementById("addEstadoBtn");
-
-        // Abrir la primera ventana emergente
-        openModalBtn.onclick = function() {
-            modal.style.display = "flex";
-        }
-
-        // Cerrar la primera ventana emergente
-        closeModalBtn.onclick = function() {
-            modal.style.display = "none";
-        }
-
-        // Abrir la ventana de agregar tarjeta
-        addTarjetaBtn.onclick = function() {
-            modal.style.display = "none";  // Cerrar la primera ventana
-            modalTarjeta.style.display = "flex";  // Abrir la segunda ventana
-        }
-
-        // Cerrar la ventana de agregar tarjeta
-        closeTarjetaBtn.onclick = function() {
-            modalTarjeta.style.display = "none";
-        }
-
-        // Abrir la ventana de subir estado de cuenta
-        addEstadoBtn.onclick = function() {
-            modal.style.display = "none";  // Cerrar la primera ventana
-            modalEstadoCuenta.style.display = "flex";  // Abrir la tercera ventana
-        }
-
-        // Cerrar la ventana de subir estado de cuenta
-        closeEstadoCuentaBtn.onclick = function() {
-            modalEstadoCuenta.style.display = "none";
-        }
-
-        // Cerrar cualquier ventana emergente al hacer clic fuera
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                modal.style.display = "none";
-            } else if (event.target === modalTarjeta) {
-                modalTarjeta.style.display = "none";
-            } else if (event.target === modalEstadoCuenta) {
-                modalEstadoCuenta.style.display = "none";
-            }
-        }
-
-        // Funcionalidad de los tres puntos para mostrar el menú de opciones
-        const menuButtons = document.querySelectorAll('.menu-button');
-        menuButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const card = this.closest('.card');
-                card.classList.toggle('active');
-            });
-        });
-
-        // Ocultar el menú de opciones al hacer clic fuera de la tarjeta
-        window.onclick = function(event) {
-            if (!event.target.matches('.menu-button')) {
-                const menus = document.querySelectorAll('.card.active');
-                menus.forEach(menu => menu.classList.remove('active'));
-            }
-        }
-
-        // Funcionalidad de eliminar tarjeta
-        const deleteOptions = document.querySelectorAll('.delete-option');
-        deleteOptions.forEach(option => {
-            option.addEventListener('click', function(event) {
-                event.preventDefault();
-                const cardId = this.getAttribute('data-card-id');
-                fetch(`/delete_card/${cardId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();  // Recargar la página después de eliminar
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

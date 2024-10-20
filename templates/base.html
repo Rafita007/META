@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Aplicación{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Estilo del círculo flotante del chatbot */
+        .chatbot-circle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #0984e3;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .chatbot-box {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chatbot-box.active {
+            display: flex;
+        }
+
+        .chatbot-header {
+            background-color: #0984e3;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .chatbot-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .chatbot-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .chatbot-input button {
+            padding: 10px 15px;
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Aquí irá el contenido específico de cada página -->
+    {% block content %}{% endblock %}
+
+    <!-- Círculo flotante del chatbot -->
+    <div class="chatbot-circle" id="chatbot-circle">
+        💬
+    </div>
+
+    <!-- Cuadro de chat del chatbot -->
+    <div class="chatbot-box" id="chatbot-box">
+        <div class="chatbot-header">
+            Chatbot
+        </div>
+        <div class="chatbot-body">
+            <p>Aquí puedes hablar con el chatbot.</p>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chat-input" placeholder="Escribe tu mensaje...">
+            <button>Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        // Selección de elementos
+        const chatbotCircle = document.getElementById('chatbot-circle');
+        const chatbotBox = document.getElementById('chatbot-box');
+
+        // Evento para abrir/cerrar el cuadro de chat con animación
+        chatbotCircle.addEventListener('click', () => {
+            chatbotBox.classList.toggle('active');
+        });
+    </script>
+
+</body>
+</html>

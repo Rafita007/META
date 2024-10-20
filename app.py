@@ -1,9 +1,14 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+import subprocess
+import shlex
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
+
 
 # Ruta de la base de datos
 db_path = os.path.join(os.path.dirname(__file__), 'instance', 'users.db')
@@ -105,6 +110,36 @@ def detalles_estado_cuenta(tarjeta_id):
 
     # Aquí puedes agregar la lógica que se aplique para los estados de cuenta
     return render_template('detalles_estado_cuenta.html', tarjeta=tarjeta)
+
+
+@app.route('/llama', methods=['POST'])
+def llama():
+    data = request.json
+    prompt = data.get('prompt', '')
+
+    if not prompt:
+        return jsonify({'response': 'El prompt está vacío'}), 400
+
+    # Ejecuta ollama y pasa el prompt a través de stdin
+    result = subprocess.run(
+        ['ollama', 'run', 'llama3.2'],
+        input=prompt,  # Pasa el 'prompt' como entrada estándar
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding='utf-8'
+    )
+
+    # Filtrar advertencias de la salida
+    if result.returncode == 0:
+        response = result.stdout
+        response = response.replace("failed to get console mode for stdout: Controlador no válido.\n", "")
+        response = response.replace("failed to get console mode for stderr: Controlador no válido.\n", "")
+    else:
+        # Incluir detalles de stdout y stderr en caso de error
+        response = f"Error al ejecutar LLaMA con ollama. stdout: {result.stdout}, stderr: {result.stderr}"
+
+    return jsonify({'response': response})
 
 # Ruta para eliminar una tarjeta
 @app.route('/delete_card/<int:card_id>', methods=['POST'])
@@ -255,7 +290,7 @@ def add_estado_cuenta():
         return redirect(url_for('dashboard'))
 
     return '''
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-da ta">
         <label for="pdf_file">Sube tu estado de cuenta (PDF):</label>
         <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required><br>
         <button type="submit">Subir</button>
