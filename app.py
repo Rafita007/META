@@ -67,24 +67,44 @@ def dashboard():
 
 
 
+# Ruta para ver los detalles de una tarjeta o estado de cuenta
 @app.route('/detalles_tarjeta/<int:tarjeta_id>')
 def detalles_tarjeta(tarjeta_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    # Buscar la tarjeta por ID y asegurarse de que pertenece al usuario logueado
     tarjeta = Tarjeta.query.filter_by(id=tarjeta_id, user_id=session['user_id']).first()
 
     if not tarjeta:
         flash("Tarjeta no encontrada o no autorizada.")
         return redirect(url_for('dashboard'))
 
-    # Datos de ejemplo para el presupuesto y gastos
+    # Lógica para diferenciar entre tarjeta y estado de cuenta
+    if tarjeta.nombre == "Estado de Cuenta":
+        # Redirigir a una nueva página para los estados de cuenta
+        return redirect(url_for('detalles_estado_cuenta', tarjeta_id=tarjeta_id))
+
+    # Si es una tarjeta, mostramos los bloques aleatorios
     presupuesto = 5000
     gastado = 3200
     restante = presupuesto - gastado
 
     return render_template('detalles_tarjeta.html', tarjeta=tarjeta, presupuesto=presupuesto, gastado=gastado, restante=restante)
+
+# Nueva ruta para los detalles de un estado de cuenta
+@app.route('/detalles_estado_cuenta/<int:tarjeta_id>')
+def detalles_estado_cuenta(tarjeta_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    tarjeta = Tarjeta.query.filter_by(id=tarjeta_id, user_id=session['user_id']).first()
+
+    if not tarjeta:
+        flash("Estado de cuenta no encontrado o no autorizado.")
+        return redirect(url_for('dashboard'))
+
+    # Aquí puedes agregar la lógica que se aplique para los estados de cuenta
+    return render_template('detalles_estado_cuenta.html', tarjeta=tarjeta)
 
 # Ruta para eliminar una tarjeta
 @app.route('/delete_card/<int:card_id>', methods=['POST'])

@@ -82,24 +82,43 @@
         </div>
 
         <!-- Lista de bloques con el presupuesto y gasto -->
-        <div class="block-list">
-            <div class="block">
-                <h3>Educación</h3>
-                <p>Presupuesto: <span class="amount">$5,000</span></p>
-                <p>Gastado: <span class="amount">$3,200</span></p>
-                <p>Restante: <span class="amount">$1,800</span></p>
-            </div>
-            <div class="block">
-                <h3>Salud</h3>
-                <p>Presupuesto: <span class="amount">$8,000</span></p>
-                <p>Gastado: <span class="amount">$5,400</span></p>
-                <p>Restante: <span class="amount">$2,600</span></p>
-            </div>
-            <!-- Puedes agregar más bloques de esta forma -->
-        </div>
+        <div class="block-list" id="block-list"></div>
     </div>
 
     <script>
+        // Función para generar un número aleatorio entre un rango
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Función para generar bloques con presupuestos y gastos aleatorios
+        function generateBlocks() {
+            const blockList = document.getElementById('block-list');
+            const blockTitles = ['Educación', 'Salud', 'Transporte', 'Ocio', 'Comida', 'Tecnología', 'Viajes', 'Ropa', 'Hogar', 'Deporte'];
+            const numBlocks = getRandomInt(2, 20); // Genera entre 2 y 20 bloques
+
+            for (let i = 0; i < numBlocks; i++) {
+                const title = blockTitles[Math.floor(Math.random() * blockTitles.length)];
+                const presupuesto = getRandomInt(1000, 10000); // Presupuesto aleatorio entre 1000 y 10000
+                const gastado = getRandomInt(0, presupuesto); // Gastado aleatorio, no puede ser mayor que el presupuesto
+                const restante = presupuesto - gastado;
+
+                const block = document.createElement('div');
+                block.classList.add('block');
+                block.innerHTML = `
+                    <h3>${title}</h3>
+                    <p>Presupuesto: <span class="amount">$${presupuesto}</span></p>
+                    <p>Gastado: <span class="amount">$${gastado}</span></p>
+                    <p>Restante: <span class="amount">$${restante}</span></p>
+                `;
+
+                blockList.appendChild(block);
+            }
+        }
+
+        // Llamar a la función para generar los bloques al cargar la página
+        generateBlocks();
+
         // Crear una gráfica de pastel de ejemplo al 100%
         const ctx = document.getElementById('myPieChart').getContext('2d');
         const myPieChart = new Chart(ctx, {
