@@ -67,23 +67,29 @@
         });
 
         // Manejar el clic en el botón de eliminar
+        // Manejar el clic en el botón de eliminar
         document.querySelectorAll('.delete-option').forEach(button => {
             button.addEventListener('click', function(event) {
                 event.preventDefault();
                 const cardId = this.getAttribute('data-card-id');
+
                 fetch(`/delete_card/${cardId}`, {
                     method: 'POST',
-                }).then(response => {
-                    if (response.ok) {
-                        // Eliminar la tarjeta visualmente del DOM
-                        const card = this.closest('.card');
-                        card.remove();
-                    } else {
-                        alert('Hubo un problema al eliminar la tarjeta.');
-                    }
-                });
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.status === 'success') {
+                          const card = this.closest('.card');
+                          card.remove();
+                      } else {
+                          alert(data.message);
+                      }
+                  }).catch(error => {
+                      console.error('Error al procesar la solicitud:', error);
+                      alert('Hubo un problema al eliminar la tarjeta.');
+                  });
             });
         });
+
     </script>
 </body>
 </html>
