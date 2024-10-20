@@ -3,6 +3,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import subprocess
+from pdf import extraer_texto_pdf, detectar_fechas, detectar_descripciones, extraer_datos_financieros
+
 import shlex
 
 app = Flask(__name__)
@@ -117,52 +119,67 @@ def llama():
     data = request.json
     prompt = data.get('prompt', '').strip()
 
-    # Verificar si el prompt es "calcula mi último estado de cuenta"
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'response': 'Por favor, inicia sesión para acceder a tu estado de cuenta.'})
+
+    tarjeta = Tarjeta.query.filter_by(user_id=user_id, nombre="Estado de Cuenta").first()
+    if not tarjeta:
+        return jsonify({'response': 'Lo siento, no tienes actualmente datos de tu estado de cuenta.'})
+
+    mi_ultimo_estado_de_cuenta = {
+        'fecha': '30/07/2024',
+        'descripcion': 'Depósito de DAVID SAAVEDRA PONCE',
+        'cargos': 0.00,
+        'abonos': 70.00,
+        'saldo': 74.96
+    }
+
     if prompt.lower() == 'calcula mi último estado de cuenta':
-        # Imprimir directamente el análisis predefinido
-        analisis = """
-        Después de analizar los datos, puedo identificar algunos patrones y categorías para tus gastos:
+        if not mi_ultimo_estado_de_cuenta:
+            return jsonify({'response': 'Lo siento, no tengo acceso a tu último estado de cuenta.'})
 
-        **Gastos Recurrentes**
+        fecha = mi_ultimo_estado_de_cuenta['fecha']
+        descripcion = mi_ultimo_estado_de_cuenta['descripcion']
+        cargos = f"{mi_ultimo_estado_de_cuenta['cargos']:.2f}"
+        abonos = f"{mi_ultimo_estado_de_cuenta['abonos']:.2f}"
+        saldo = f"{mi_ultimo_estado_de_cuenta['saldo']:.2f}"
 
-        * **Transferencias a David Saavedra Mercado P New**: Esta es una transferencia recurrente que se repite cada
-        cierto tiempo. Es posible que sea un pago mensual o trimestral hacia alguien.
-        * **Depósitos de DAVID SAAVEDRA PONCE**: También hay depósitos recurrentes, lo que sugiere que David Saavedra
-        Ponce está recibiendo una cantidad fija cada cierto tiempo.
-
-        **Gastos Casuales**
-
-        * **Compras**: Hay varias compras registradas en la tabla, como zapatos ($46.76), $54.39, $66.31 y $66.33. Estos
-        son gastos casuales que no tienen un patrón regular.
-        * **Desechos electrónicos**: También hay una compra de desechos electrónicos por $261.00 y $260.18.
-
-        **Gastos Irregulares**
-
-        * **Reparaciones o mantenimiento de la casa**: No hay registros específicos de reparaciones o mantenimiento, pero
-        es posible que se estén realizando gastos irregulares en este área.
-        * **Compras de regalos para amigos o familiares**: No hay registros explícitos de compras de regalos, pero es
-        posible que se estén haciendo gastos irregulares en esta área.
-
-        **Ingresos Recurrentes**
-
-        * **Salarios y pagos**: Aunque no hay registros explícitos de ingresos, es posible que sea un salario o pago
-        recurrente.
-
-        **Ingresos Irregulares**
-
-        * **Desechos electrónicos**: Los desechos electrónicos son una compra irregular que se ha realizado varias veces.
-
-        **Observaciones generales**
-
-        * Hay varios depósitos y transferencias a David Saavedra Ponce, lo que sugiere una relación financiera.
-        * Las compras de zapatos y desechos electrónicos son gastos casuales regulares.
-        * Los ingresos recurrentes y irregulares no están explícitamente registrados en la tabla.
-
-        Espero que esta información te sea útil. Si tienes alguna pregunta o necesitas más análisis, no dudes en preguntar.
+        # Generar la tabla y almacenarla en la sesión
+        tabla_estado_cuenta = f"""
+        Fecha: {fecha}, 
+        Descripción: {descripcion}, 
+        Cargos: {cargos}, 
+        Abonos: {abonos}, 
+        Saldo: {saldo}
         """
-        return jsonify({'response': analisis})
+        session['tabla_estado_cuenta'] = tabla_estado_cuenta
 
-    # Si el prompt no es "calcula mi último estado de cuenta", ejecutar ollama normalmente
+        llama_prompt = f"""
+        Oye, te voy a pasar una tabla y necesito que por favor me hagas categorías, 
+        una de gastos recurrentes, gastos casuales, ingresos casuales e ingresos recurrentes. 
+        Aquí está la tabla: {tabla_estado_cuenta}
+        """
+
+        # Ejecutar ollama con el prompt generado
+        result = subprocess.run(
+            ['ollama', 'run', 'llama3.2'],
+            input=llama_prompt,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8'
+        )
+
+        if result.returncode == 0:
+            response = result.stdout
+            response = response.replace("failed to get console mode for stdout: Controlador no válido.\n", "")
+            response = response.replace("failed to get console mode for stderr: Controlador no válido.\n", "")
+        else:
+            response = f"Error al ejecutar LLaMA. stdout: {result.stdout}, stderr: {result.stderr}"
+
+        return jsonify({'response': response})
+
     result = subprocess.run(
         ['ollama', 'run', 'llama3.2'],
         input=prompt,
@@ -174,7 +191,6 @@ def llama():
 
     if result.returncode == 0:
         response = result.stdout
-        # Limpiar advertencias no relevantes
         response = response.replace("failed to get console mode for stdout: Controlador no válido.\n", "")
         response = response.replace("failed to get console mode for stderr: Controlador no válido.\n", "")
     else:
@@ -194,8 +210,40 @@ def detalles_estado_cuenta_func(tarjeta_id):
         flash("Estado de cuenta no encontrado o no autorizado.")
         return redirect(url_for('dashboard'))
 
-    # Aquí puedes agregar la lógica que se aplique para los estados de cuenta
-    return render_template('detalles_estado_cuenta.html', tarjeta=tarjeta)
+    # Aquí vamos a añadir la lógica para comprobar si hay un estado de cuenta y extraer los datos
+    # Esto es una simulación, puedes ajustar cómo los datos son recuperados
+    # Supongamos que tenemos una variable 'datos_estado_cuenta' con la información extraída del PDF
+    datos_estado_cuenta = None
+
+    # Aquí debería haber la lógica que obtiene el estado de cuenta del PDF procesado
+    # En este ejemplo, asumimos que la variable ya está generada desde el proceso anterior
+    if tarjeta.nombre == "Estado de Cuenta":
+        # Aquí podemos agregar la lógica para obtener los datos del estado de cuenta
+        # por ejemplo, de una base de datos o de la variable que contiene los datos.
+        texto_pdf = extraer_texto_pdf(os.path.join(app.config['UPLOAD_FOLDER'], 'estado_cuenta.pdf'))  # ruta del PDF subido
+        fechas = detectar_fechas(texto_pdf)
+        descripciones = detectar_descripciones(texto_pdf)
+        cargos, abonos, saldos = extraer_datos_financieros(texto_pdf)
+
+        # Crear una cadena o lista de los datos del estado de cuenta
+        datos_estado_cuenta = [
+            {
+                "Fecha": fechas[i],
+                "Descripción": descripciones[i],
+                "Cargos": cargos[i],
+                "Abonos": abonos[i],
+                "Saldos": saldos[i]
+            }
+            for i in range(len(fechas))
+        ]
+
+    # Verificar si hay datos del estado de cuenta o si no existen
+    if datos_estado_cuenta:
+        # Pasar los datos al template
+        return render_template('detalles_estado_cuenta.html', tarjeta=tarjeta, datos_estado_cuenta=datos_estado_cuenta)
+    else:
+        flash("No hay datos disponibles para este estado de cuenta.")
+        return redirect(url_for('dashboard'))
 
 
 
@@ -280,13 +328,24 @@ def signup():
 
 
 # Ruta para cerrar sesión
-@app.route('/logout')
-def logout():
-    session.pop('user_email', None)
-    session.pop('user_name', None)
-    session.pop('user_id', None)
-    flash('Has cerrado sesión')
-    return redirect(url_for('login'))
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+
+        if user and user.password == password:
+            session['user_email'] = user.email
+            session['user_id'] = user.id
+            session['user_name'] = user.first_name
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Correo o contraseña incorrectos')
+
+    return render_template('login.html')
+
+
 
 
 # Ruta para agregar una tarjeta
@@ -337,19 +396,42 @@ def add_estado_cuenta():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_file.filename)
             pdf_file.save(file_path)
 
+            # Extraer texto del PDF y procesarlo usando las funciones de pdf.py
+            texto_pdf = extraer_texto_pdf(file_path)
+            fechas = detectar_fechas(texto_pdf)
+            descripciones = detectar_descripciones(texto_pdf)
+            cargos, abonos, saldos = extraer_datos_financieros(texto_pdf)
+
+            # Crear una sola cadena con los datos extraídos
+            longitud_maxima = max(len(cargos), len(abonos), len(saldos))
+            cargos += [None] * (longitud_maxima - len(cargos))
+            abonos += [None] * (longitud_maxima - len(abonos))
+            saldos += [None] * (longitud_maxima - len(saldos))
+
+            datos_concatenados = "; ".join(
+                f"Fecha: {fechas[i]}, Descripción: {descripciones[i]}, Cargos: {cargos[i]}, Abonos: {abonos[i]}, Saldos: {saldos[i]}"
+                for i in range(len(fechas))
+            )
+
+            # Guardar la cadena en un archivo .txt
+            txt_file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'estado_cuenta.txt')
+            with open(txt_file_path, 'w') as txt_file:
+                txt_file.write(datos_concatenados)
+
             # Crear un nuevo registro de estado de cuenta en la base de datos
             nueva_tarjeta = Tarjeta(nombre="Estado de Cuenta", user_id=session['user_id'])
             db.session.add(nueva_tarjeta)
             db.session.commit()
 
-            flash("Estado de cuenta agregado correctamente.")
+            flash(f"Estado de cuenta procesado y guardado en 'estado_cuenta.txt'")
+
         else:
             flash("Por favor, sube un archivo PDF válido.")
 
         return redirect(url_for('dashboard'))
 
     return '''
-    <form method="POST" enctype="multipart/form-da ta">
+    <form method="POST" enctype="multipart/form-data">
         <label for="pdf_file">Sube tu estado de cuenta (PDF):</label>
         <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required><br>
         <button type="submit">Subir</button>
